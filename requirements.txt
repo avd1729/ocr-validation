@@ -4,3 +4,4 @@ boto3
 pypdf
 pdf2image
 Pillow
+quart

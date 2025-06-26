@@ -1,0 +1,8 @@
+fastapi
+mangum
+uvicorn
+boto3
+pypdf
+pdf2image
+Pillow
+python-multipart
