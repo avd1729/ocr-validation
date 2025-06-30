@@ -6,8 +6,7 @@ export const options = {
   duration: '10s',
 };
 
-// ✅ open() must be at global scope
-const pdfFile = open('sample.pdf', 'b');
+const pdfFile = open('docs/sample.pdf', 'b');
 
 export default function () {
   const url = 'https://g82p2ksxoe.execute-api.us-east-1.amazonaws.com/test/validate';
