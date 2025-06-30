@@ -1,5 +1,5 @@
-fastapi
-mangum
+# fastapi
+# mangum
 uvicorn
 boto3
 pypdf
