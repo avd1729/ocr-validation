@@ -2,14 +2,15 @@ import json
 import uuid
 import time
 import asyncio
-
+from src.utils import timed
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
 from src.utils import parse_pdf, get_similarity_score
 from src.services import textract_process_sync, compare_faces_sync, extract_form_page_sync, prepare_images_sync
+from config.constants import PDF_DPI, IMAGE_QUALITY, SIMILARITY_THRESHOLD, MAX_WORKERS
 
-executor = ThreadPoolExecutor(max_workers=4)
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
 def handler(event, context):
     try:
@@ -30,39 +31,33 @@ def handler(event, context):
 
             metrics = {}
 
-            async def timed(name, func):
-                start = time.time()
-                result = await func()
-                metrics[name] = round((time.time() - start) * 1000, 2)
-                return result
-
             async def extract_form_page_data():
                 return await loop.run_in_executor(executor, extract_form_page_sync, pdf_bytes1)
 
             async def extract_pan_card_data():
                 def get_pan_data_textract():
-                    img_bytes = convert_from_bytes(pdf_bytes2.read(), dpi=150, first_page=2, last_page=2)
+                    img_bytes = convert_from_bytes(pdf_bytes2.read(), dpi=PDF_DPI, first_page=2, last_page=2)
                     buf = BytesIO()
-                    img_bytes[0].convert("RGB").save(buf, format="JPEG", quality=75)
+                    img_bytes[0].convert("RGB").save(buf, format="JPEG", quality=IMAGE_QUALITY)
                     buf.seek(0)
                     return textract_process_sync(buf.read())
                 return await loop.run_in_executor(executor, get_pan_data_textract)
 
             async def compare_faces():
                 def run():
-                    img2, img3 = prepare_images_sync(pdf_data)
-                    if not img2 or not img3:
+                    pan_image, selfie_image = prepare_images_sync(pdf_data)
+                    if not pan_image or not selfie_image:
                         return None
-                    return compare_faces_sync(img2, img3)
+                    return compare_faces_sync(pan_image, selfie_image)
                 return await loop.run_in_executor(executor, run)
 
             tasks = await asyncio.gather(
-                timed("page1_ocr_ms", extract_form_page_data),
-                timed("page2_textract_ms", extract_pan_card_data),
-                timed("face_match_ms", compare_faces)
+                timed(metrics, "page1_ocr_ms", extract_form_page_data),
+                timed(metrics, "page2_textract_ms", extract_pan_card_data),
+                timed(metrics, "face_match_ms", compare_faces)
             )
 
-            p1_data, p2_data, similarity = tasks
+            form_page_data, pan_card_data, face_match_similarity = tasks
 
             # Match logic
             fields = ["name", "father_name", "dob", "pan"]
@@ -70,24 +65,24 @@ def handler(event, context):
             field_pass = True
             errors = []
 
-            for f in fields:
-                score = get_similarity_score(p1_data.get(f), p2_data.get(f))
-                passed = score >= 80
-                field_scores[f] = {
+            for field in fields:
+                score = get_similarity_score(form_page_data.get(field), pan_card_data.get(field))
+                passed = score >= SIMILARITY_THRESHOLD 
+                field_scores[field] = {
                     "score": score,
                     "pass": passed,
-                    "page1_value": p1_data.get(f),
-                    "page2_value": p2_data.get(f)
+                    "page1_value": form_page_data.get(field),
+                    "page2_value": pan_card_data.get(field)
                 }
                 if not passed:
                     field_pass = False
                     errors.append({
-                        "code": f"{f.upper()}_MISMATCH",
-                        "message": f"{f.replace('_', ' ').title()} differs between Page 1 and PAN card"
+                        "code": f"{field.upper()}_MISMATCH",
+                        "message": f"{field.replace('_', ' ').title()} differs between Page 1 and PAN card"
                     })
 
-            face_pass = similarity is not None and similarity >= 0.7
-            if similarity is None:
+            face_pass = face_match_similarity is not None and face_match_similarity >= 0.7
+            if face_match_similarity is None:
                 errors.append({"code": "FACE_MATCH_ERROR", "message": "Could not process face comparison"})
 
             metrics["total_processing_seconds"] = round(time.time() - start_time, 2)
@@ -99,7 +94,7 @@ def handler(event, context):
                     "field_matches": field_scores,
                     "field_pass": field_pass,
                     "face_match": {
-                        "similarity": round(similarity, 2) if similarity else None,
+                        "similarity": round(face_match_similarity, 2) if face_match_similarity else None,
                         "pass": face_pass
                     },
                     "overall_pass": field_pass and face_pass,

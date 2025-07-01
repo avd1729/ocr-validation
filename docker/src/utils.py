@@ -2,10 +2,13 @@ import io
 import magic
 import base64
 import cgi
+import time
+from typing import Callable, Any, Dict
 from pypdf import PdfReader
 from difflib import SequenceMatcher
+from config.constants import PAGES_REQUIRED
 
-def get_similarity_score(a, b):
+def get_similarity_score(a: str, b: str):
     if not a or not b:
         return 0
     return round(SequenceMatcher(None, a.strip(), b.strip()).ratio() * 100)
@@ -41,7 +44,13 @@ def parse_pdf(event):
     pdf_bytes = io.BytesIO(file_data)
     reader = PdfReader(pdf_bytes)
     
-    if len(reader.pages) != 3:
-        raise Exception("Need exactly 3 pages")
+    if len(reader.pages) != PAGES_REQUIRED:
+        raise Exception(f"Need exactly {PAGES_REQUIRED} pages")
 
     return file_data
+
+async def timed(metrics: Dict[str, float], name: str, func: Callable[[], Any]):
+    start = time.time()
+    result = await func()
+    metrics[name] = round((time.time() - start) * 1000, 2)
+    return result
