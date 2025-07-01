@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
 from src.utils import parse_pdf, get_similarity_score
 from src.services import text_extract_process_sync, compare_faces_sync, extract_form_page_sync, prepare_images_sync
-from config.constants import PDF_DPI, IMAGE_QUALITY, SIMILARITY_THRESHOLD, MAX_WORKERS
+from config.constants import PDF_DPI, IMAGE_QUALITY, SIMILARITY_THRESHOLD, MAX_WORKERS, FACE_SIMILARITY_THRESHOLD
 
 executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
@@ -81,7 +81,7 @@ def handler(event, context):
                         "message": f"{field.replace('_', ' ').title()} differs between Page 1 and PAN card"
                     })
 
-            face_pass = face_match_similarity is not None and face_match_similarity >= 0.7
+            face_pass = face_match_similarity is not None and face_match_similarity >= FACE_SIMILARITY_THRESHOLD
             if face_match_similarity is None:
                 errors.append({"code": "FACE_MATCH_ERROR", "message": "Could not process face comparison"})
 

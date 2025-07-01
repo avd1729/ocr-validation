@@ -3,3 +3,5 @@ venv
 documents/
 temp/
 __pycache__
+/assets/
+*.pdf
