@@ -1,8 +1,8 @@
-import io
 import magic
 import base64
-import cgi
 import time
+from io import BytesIO
+from cgi import FieldStorage
 from typing import Callable, Any, Dict
 from pypdf import PdfReader
 from difflib import SequenceMatcher
@@ -27,10 +27,10 @@ def parse_pdf(event):
     content_type = event['headers'].get('Content-Type') or event['headers'].get('content-type')
     body = base64.b64decode(event['body']) if event['isBase64Encoded'] else event['body'].encode()
 
-    fp = io.BytesIO(body)
+    fp = BytesIO(body)
     environ = {'REQUEST_METHOD': 'POST'}
     headers = {'content-type': content_type}
-    fs = cgi.FieldStorage(fp=fp, environ=environ, headers=headers, keep_blank_values=True)
+    fs = FieldStorage(fp=fp, environ=environ, headers=headers, keep_blank_values=True)
 
     if 'file' not in fs:
         raise Exception("Missing 'file' field in form")
@@ -41,7 +41,7 @@ def parse_pdf(event):
     if not sanity_check(file_data):
         raise Exception("Invalid file type")
 
-    pdf_bytes = io.BytesIO(file_data)
+    pdf_bytes = BytesIO(file_data)
     reader = PdfReader(pdf_bytes)
     
     if len(reader.pages) != PAGES_REQUIRED:
