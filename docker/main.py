@@ -6,8 +6,8 @@ import asyncio
 
 from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
-from utils import parse_pdf, get_similarity_score
-from services import textract_process_sync, compare_faces_sync, extract_page1_sync, prepare_images_sync
+from src.utils import parse_pdf, get_similarity_score
+from src.services import textract_process_sync, compare_faces_sync, extract_page1_sync, prepare_images_sync
 
 executor = ThreadPoolExecutor(max_workers=4)
 

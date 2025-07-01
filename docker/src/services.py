@@ -1,7 +1,7 @@
 from io import BytesIO
 from pypdf import PdfReader
 from pdf2image import convert_from_bytes
-from extraction_helpers import extract_fields_page1, extract_fields_page2
+from src.extraction_helpers import extract_fields_page1, extract_fields_page2
 from models.aws_client import AWSClient
 
 client = AWSClient() 
