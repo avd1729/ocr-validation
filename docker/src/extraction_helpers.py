@@ -21,12 +21,9 @@ def extract_fields_from_form(text: str):
     return fields
 
 def extract_fields_from_pan(text: str):
-    dob_match = re.search(r"\d{1,2}[-/]\d{1,2}[-/]\d{4}", text)
-    dob = dob_match.group(0) if dob_match else None
-
     return {
         "pan": extract_after_label(text, r"Permanent Account Number Card\s*", r"[A-Z]{5}[0-9]{4}[A-Z]"),
         "name": extract_after_label(text, r"Name\s*[:\-]?\s*", r"[A-Z ]+"),
         "father_name": extract_after_label(text, r"Father'?s Name\s*[:\-]?\s*", r"[A-Z ]+"),
-        "dob": dob
+        "dob": re.search(r"\d{1,2}[-/]\d{1,2}[-/]\d{4}", text).group(0)
     }
