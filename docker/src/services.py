@@ -1,7 +1,7 @@
 from io import BytesIO
 from pypdf import PdfReader
 from pdf2image import convert_from_bytes
-from src.extraction_helpers import extract_fields_page1, extract_fields_page2
+from src.extraction_helpers import extract_fields_from_form, extract_fields_from_pan
 from models.aws_client import AWSClient
 
 client = AWSClient() 
@@ -11,7 +11,7 @@ face_service = client.face_service
 def textract_process_sync(page_bytes):
     try:
         result = text_service.extract_text_fields(page_bytes)
-        return extract_fields_page2(result)
+        return extract_fields_from_pan(result)
     except Exception:
         return {}
 
@@ -21,11 +21,11 @@ def compare_faces_sync(source, target):
     except Exception:
         return None
 
-def extract_page1_sync(pdf_bytes):
+def extract_form_page_sync(pdf_bytes):
     try:
         reader = PdfReader(pdf_bytes)
         page1_text = reader.pages[0].extract_text()
-        return extract_fields_page1(page1_text)
+        return extract_fields_from_form(page1_text)
     except Exception:
         return {}
 

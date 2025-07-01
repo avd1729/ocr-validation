@@ -7,7 +7,7 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
 from src.utils import parse_pdf, get_similarity_score
-from src.services import textract_process_sync, compare_faces_sync, extract_page1_sync, prepare_images_sync
+from src.services import textract_process_sync, compare_faces_sync, extract_form_page_sync, prepare_images_sync
 
 executor = ThreadPoolExecutor(max_workers=4)
 
@@ -36,17 +36,17 @@ def handler(event, context):
                 metrics[name] = round((time.time() - start) * 1000, 2)
                 return result
 
-            async def extract_page1_data():
-                return await loop.run_in_executor(executor, extract_page1_sync, pdf_bytes1)
+            async def extract_form_page_data():
+                return await loop.run_in_executor(executor, extract_form_page_sync, pdf_bytes1)
 
-            async def extract_page2_data():
-                def get_page2_textract():
+            async def extract_pan_card_data():
+                def get_pan_data_textract():
                     img_bytes = convert_from_bytes(pdf_bytes2.read(), dpi=150, first_page=2, last_page=2)
                     buf = BytesIO()
                     img_bytes[0].convert("RGB").save(buf, format="JPEG", quality=75)
                     buf.seek(0)
                     return textract_process_sync(buf.read())
-                return await loop.run_in_executor(executor, get_page2_textract)
+                return await loop.run_in_executor(executor, get_pan_data_textract)
 
             async def compare_faces():
                 def run():
@@ -57,8 +57,8 @@ def handler(event, context):
                 return await loop.run_in_executor(executor, run)
 
             tasks = await asyncio.gather(
-                timed("page1_ocr_ms", extract_page1_data),
-                timed("page2_textract_ms", extract_page2_data),
+                timed("page1_ocr_ms", extract_form_page_data),
+                timed("page2_textract_ms", extract_pan_card_data),
                 timed("face_match_ms", compare_faces)
             )
 

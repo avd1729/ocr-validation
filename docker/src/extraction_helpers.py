@@ -5,7 +5,7 @@ def extract_after_label(text, label_pattern, value_pattern):
     match = pattern.search(text)
     return match.group(1).strip() if match else None
 
-def extract_fields_page1(text):
+def extract_fields_from_form(text):
     text = re.sub(r"[ ]{2,}", " ", text)
     joined = "\n".join(text.splitlines())
     fields = {
@@ -20,7 +20,7 @@ def extract_fields_page1(text):
         fields["father_name"] = extract_after_label(joined, r"FATHER\s+NAME", r"[A-Z\s]+")
     return fields
 
-def extract_fields_page2(text):
+def extract_fields_from_pan(text):
     return {
         "pan": extract_after_label(text, r"Permanent Account Number Card\s*", r"[A-Z]{5}[0-9]{4}[A-Z]"),
         "name": extract_after_label(text, r"Name\s*[:\-]?\s*", r"[A-Z ]+"),
