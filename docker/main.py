@@ -7,7 +7,7 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
 from src.utils import parse_pdf, get_similarity_score
-from src.services import textract_process_sync, compare_faces_sync, extract_form_page_sync, prepare_images_sync
+from src.services import text_extract_process_sync, compare_faces_sync, extract_form_page_sync, prepare_images_sync
 from config.constants import PDF_DPI, IMAGE_QUALITY, SIMILARITY_THRESHOLD, MAX_WORKERS
 
 executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
@@ -35,13 +35,13 @@ def handler(event, context):
                 return await loop.run_in_executor(executor, extract_form_page_sync, pdf_bytes1)
 
             async def extract_pan_card_data():
-                def get_pan_data_textract():
+                def get_pan_text_extract():
                     img_bytes = convert_from_bytes(pdf_bytes2.read(), dpi=PDF_DPI, first_page=2, last_page=2)
                     buf = BytesIO()
                     img_bytes[0].convert("RGB").save(buf, format="JPEG", quality=IMAGE_QUALITY)
                     buf.seek(0)
-                    return textract_process_sync(buf.read())
-                return await loop.run_in_executor(executor, get_pan_data_textract)
+                    return text_extract_process_sync(buf.read())
+                return await loop.run_in_executor(executor, get_pan_text_extract)
 
             async def compare_faces():
                 def run():
@@ -53,7 +53,7 @@ def handler(event, context):
 
             tasks = await asyncio.gather(
                 timed(metrics, "page1_ocr_ms", extract_form_page_data),
-                timed(metrics, "page2_textract_ms", extract_pan_card_data),
+                timed(metrics, "page2_text_extract_ms", extract_pan_card_data),
                 timed(metrics, "face_match_ms", compare_faces)
             )
 

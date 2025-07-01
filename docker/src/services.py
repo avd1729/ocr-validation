@@ -9,7 +9,7 @@ client = AWSClient()
 text_service = client.text_service
 face_service = client.face_service
 
-def textract_process_sync(page_bytes: bytes):
+def text_extract_process_sync(page_bytes: bytes):
     result = text_service.extract_text_fields(page_bytes)
     return extract_fields_from_pan(result)
 
