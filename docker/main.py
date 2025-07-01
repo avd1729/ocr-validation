@@ -11,7 +11,6 @@ from src.services import textract_process_sync, compare_faces_sync, extract_page
 
 executor = ThreadPoolExecutor(max_workers=4)
 
-
 def handler(event, context):
     try:
         start_time = time.time()
