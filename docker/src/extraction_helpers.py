@@ -25,5 +25,5 @@ def extract_fields_page2(text):
         "pan": extract_after_label(text, r"Permanent Account Number Card\s*", r"[A-Z]{5}[0-9]{4}[A-Z]"),
         "name": extract_after_label(text, r"Name\s*[:\-]?\s*", r"[A-Z ]+"),
         "father_name": extract_after_label(text, r"Father'?s Name\s*[:\-]?\s*", r"[A-Z ]+"),
-        "dob": extract_after_label(text, r"Date of Birth\s*[:\-]?\s*", r"\d{2}[-/]\d{2}[-/]\d{4}")
+        "dob": re.search(r"\d{1,2}[-/]\d{1,2}[-/]\d{4}", text).group(0)
     }

@@ -11,8 +11,7 @@ face_service = client.face_service
 def textract_process_sync(page_bytes):
     try:
         result = text_service.extract_text_fields(page_bytes)
-        text = result.get("text", "")
-        return extract_fields_page2(text)
+        return extract_fields_page2(result)
     except Exception:
         return {}
 

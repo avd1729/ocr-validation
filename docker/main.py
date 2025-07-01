@@ -1,9 +1,9 @@
-import io
 import json
 import uuid
 import time
 import asyncio
 
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from pdf2image import convert_from_bytes
 from src.utils import parse_pdf, get_similarity_score
@@ -19,7 +19,6 @@ def handler(event, context):
         # Parse PDF file
         try:
             pdf_data = parse_pdf(event)
-
         except Exception as e:
             return {"statusCode": 400, "body": json.dumps({"error": f"Invalid PDF: {str(e)}"})}
 
@@ -28,15 +27,15 @@ def handler(event, context):
         asyncio.set_event_loop(loop)
 
         async def process():
-            pdf_bytes1 = io.BytesIO(pdf_data)
-            pdf_bytes2 = io.BytesIO(pdf_data)
+            pdf_bytes1 = BytesIO(pdf_data)
+            pdf_bytes2 = BytesIO(pdf_data)
 
             metrics = {}
 
             async def timed(name, func):
                 start = time.time()
                 result = await func()
-                metrics[name] = round((time.time() - start) * 1000, 2)  # in ms
+                metrics[name] = round((time.time() - start) * 1000, 2)
                 return result
 
             async def extract_page1_data():
@@ -45,7 +44,7 @@ def handler(event, context):
             async def extract_page2_data():
                 def get_page2_textract():
                     img_bytes = convert_from_bytes(pdf_bytes2.read(), dpi=150, first_page=2, last_page=2)
-                    buf = io.BytesIO()
+                    buf = BytesIO()
                     img_bytes[0].convert("RGB").save(buf, format="JPEG", quality=75)
                     buf.seek(0)
                     return textract_process_sync(buf.read())
