@@ -1,28 +1,24 @@
-import boto3
 from io import BytesIO
 from pypdf import PdfReader
 from pdf2image import convert_from_bytes
 from extraction_helpers import extract_fields_page1, extract_fields_page2
+from models.aws_client import AWSClient
 
-textract = boto3.client('textract')
-rekognition = boto3.client('rekognition')
+client = AWSClient() 
+text_service = client.text_service
+face_service = client.face_service
 
 def textract_process_sync(page_bytes):
     try:
-        result = textract.detect_document_text(Document={'Bytes': page_bytes})
-        text = "\n".join(b["Text"] for b in result["Blocks"] if b["BlockType"] == "LINE")
+        result = text_service.extract_text_fields(page_bytes)
+        text = result.get("text", "")
         return extract_fields_page2(text)
     except Exception:
         return {}
 
 def compare_faces_sync(source, target):
     try:
-        response = rekognition.compare_faces(
-            SourceImage={'Bytes': source},
-            TargetImage={'Bytes': target},
-            SimilarityThreshold=70
-        )
-        return response['FaceMatches'][0]['Similarity'] / 100.0 if response['FaceMatches'] else 0.0
+        return face_service.compare_faces(source, target)
     except Exception:
         return None
 
