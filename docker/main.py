@@ -15,7 +15,6 @@ executor = ThreadPoolExecutor(max_workers=4)
 def handler(event, context):
     try:
         start_time = time.time()
-
         # Parse PDF file
         try:
             pdf_data = parse_pdf(event)
@@ -58,10 +57,13 @@ def handler(event, context):
                     return compare_faces_sync(img2, img3)
                 return await loop.run_in_executor(executor, run)
 
-            # Run tasks with timing
-            p1_data = await timed("page1_ocr_ms", extract_page1_data)
-            p2_data = await timed("page2_textract_ms", extract_page2_data)
-            similarity = await timed("face_match_ms", compare_faces)
+            tasks = await asyncio.gather(
+                timed("page1_ocr_ms", extract_page1_data),
+                timed("page2_textract_ms", extract_page2_data),
+                timed("face_match_ms", compare_faces)
+            )
+
+            p1_data, p2_data, similarity = tasks
 
             # Match logic
             fields = ["name", "father_name", "dob", "pan"]
