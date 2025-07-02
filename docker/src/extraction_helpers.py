@@ -14,10 +14,7 @@ def extract_fields_from_form(text: str):
         "dob": extract_after_label(joined, r"DATE OF BIRTH.*?\s*", r"\d{2}[-/]\d{2}[-/]\d{4}"),
     }
     father_match = re.search(r"FATHER\s+NAME[\s\n]*([A-Z]+)[\s\n]*([A-Z]+)", joined)
-    if father_match:
-        fields["father_name"] = f"{father_match.group(1)} {father_match.group(2)}"
-    else:
-        fields["father_name"] = extract_after_label(joined, r"FATHER\s+NAME", r"[A-Z\s]+")
+    fields["father_name"] = f"{father_match.group(1)} {father_match.group(2)}"
     return fields
 
 def extract_fields_from_pan(text: str):
